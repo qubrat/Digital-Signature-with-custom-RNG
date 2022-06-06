@@ -2,33 +2,16 @@ import moviepy.editor as mp
 import cv2
 import wave
 import numpy as np
-import pytube
-# https://www.youtube.com/watch?v=h3MuIUNCCzI - LIVE 24/7
 
+def trng_algorithm(filepath):
 
-def trng_algorithm():
-    # video = mp.AudioFileClip(r"src/trains.mp4")
-    # video.write_audiofile(r"src/audio_tr.wav")
-
-    # video = mp.AudioFileClip(r"src/test.mp4")
-    # video.write_audiofile(r"src/audio_t.wav")
-
-    video = mp.AudioFileClip(r"src/wind.mp4")
-    video.write_audiofile(r"src/audio_w.wav")
-
-    # raw = wave.open('src/audio_tr.wav')
-    # raw = wave.open('src/audio_t.wav')
-    raw = wave.open('src/audio_w.wav')
-
+    video = mp.AudioFileClip(filepath)
+    video.write_audiofile(r"src/audio.wav")
+    raw = wave.open('src/audio.wav')
     audio = raw.readframes(-1)
     audio = np.frombuffer(audio, dtype="int8")
     audio = np.trim_zeros(audio, 'fb')
-
-    # cap = cv2.VideoCapture("src/trains.mp4")
-    # cap = cv2.VideoCapture("src/test.mp4")
-    cap = cv2.VideoCapture("src/wind.mp4")
-    length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
+    cap = cv2.VideoCapture(filepath)
     frameNumber = 1
     cap.set(1, frameNumber)
     res, frame = cap.read()  # wczytujemy dane z klatki
@@ -37,22 +20,15 @@ def trng_algorithm():
     x = int(width / 2)
     y = int(height / 2)
 
-    R = frame[y, x, 2]
-    G = frame[y, x, 1]
-    B = frame[y, x, 0]
-
-    # color_xy = (R << 16) + (G << 8) + B
-    # print(color_xy)
-
-    color_i_1 = (frame[y - 1, x - 1, 2] << 16) + (frame[y - 1, x - 1, 1] << 8) + (frame[y - 1, x - 1, 1])
-    color_i_2 = (frame[y - 1, x, 2] << 16) + (frame[y - 1, x, 1] << 8) + (frame[y - 1, x, 1])
-    color_i_3 = (frame[y - 1, x + 1, 2] << 16) + (frame[y - 1, x + 1, 1] << 8) + (frame[y - 1, x + 1, 1])
-    color_i_4 = (frame[y, x - 1, 2] << 16) + (frame[y, x - 1, 1] << 8) + (frame[y, x - 1, 1])
-    color_i_5 = (frame[y, x, 2] << 16) + (frame[y, x, 1] << 8) + (frame[y, x, 1])
-    color_i_6 = (frame[y, x + 1, 2] << 16) + (frame[y, x + 1, 1] << 8) + (frame[y, x + 1, 1])
-    color_i_7 = (frame[y + 1, x - 1, 2] << 16) + (frame[y + 1, x - 1, 1] << 8) + (frame[y + 1, x - 1, 1])
-    color_i_8 = (frame[y + 1, x, 2] << 16) + (frame[y + 1, x, 1] << 8) + (frame[y + 1, x, 1])
-    color_i_9 = (frame[y + 1, x + 1, 2] << 16) + (frame[y + 1, x + 1, 1] << 8) + (frame[y + 1, x + 1, 1])
+    color_i_1 = (frame[y - 1, x - 1, 2] << 16) + (frame[y - 1, x - 1, 1] << 8)  + (frame[y - 1, x - 1, 1])
+    color_i_2 = (frame[y - 1, x, 2]     << 16) + (frame[y - 1, x, 1]     << 8)  + (frame[y - 1, x, 1])
+    color_i_3 = (frame[y - 1, x + 1, 2] << 16) + (frame[y - 1, x + 1, 1] << 8)  + (frame[y - 1, x + 1, 1])
+    color_i_4 = (frame[y, x - 1, 2] << 16)     + (frame[y, x - 1, 1] << 8)      + (frame[y, x - 1, 1])
+    color_i_5 = (frame[y, x, 2]     << 16)     + (frame[y, x, 1]     << 8)      + (frame[y, x, 1])
+    color_i_6 = (frame[y, x + 1, 2] << 16)     + (frame[y, x + 1, 1] << 8)      + (frame[y, x + 1, 1])
+    color_i_7 = (frame[y + 1, x - 1, 2] << 16) + (frame[y + 1, x - 1, 1] << 8)  + (frame[y + 1, x - 1, 1])
+    color_i_8 = (frame[y + 1, x, 2]     << 16) + (frame[y + 1, x, 1]     << 8)  + (frame[y + 1, x, 1])
+    color_i_9 = (frame[y + 1, x + 1, 2] << 16) + (frame[y + 1, x + 1, 1] << 8)  + (frame[y + 1, x + 1, 1])
 
     color_i = int(
         (color_i_1 + color_i_2 + color_i_3 + color_i_4 + color_i_5 + color_i_6 + color_i_7 + color_i_8 + color_i_9) / 9)
@@ -63,7 +39,6 @@ def trng_algorithm():
     # print(x,y)
 
     bit_result = []
-    bit_i = 0
     vt = int(np.var(frame[:, :, :]) / 2)
     threshold = 100
     watchdog = 0
@@ -78,15 +53,9 @@ def trng_algorithm():
     R2 = 0
     G2 = 0
     B2 = 0
-    SN1 = 0
-    SN2 = 0
-    SN3 = 0
-    SN4 = 0
-    SN5 = 0
-    hundred_kB = 819200
     skipCount = 0
 
-    while len(bit_result) < hundred_kB:
+    while len(bit_result) < 2048:
         R = frame[y, x, 2]
         G = frame[y, x, 1]
         B = frame[y, x, 0]
@@ -134,12 +103,10 @@ def trng_algorithm():
             y = (((G ^ x) << 4) ^ (B ^ y)) % height
             j += K / 1000
 
-    result = []
+    result_tmp = []
     for i in range(0, len(bit_result), 8):
         tmp = ''.join(bit_result[i:i + 8])
-        result.append(int(tmp, 2))
-        print(result[0])
+        result_tmp.append(str(int(tmp, 2)))
 
-
-def execute():
-    trng_algorithm()
+    result = ''.join(result_tmp)
+    print(result)
