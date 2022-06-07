@@ -6,11 +6,11 @@ import numpy as np
 def trng_algorithm(filepath):
 
     video = mp.AudioFileClip(filepath)
-    video.write_audiofile(r"src/audio.wav")
-    raw = wave.open('src/audio.wav')
+    video.write_audiofile(r"audio.wav")
+    raw = wave.open("audio.wav")
     audio = raw.readframes(-1)
     audio = np.frombuffer(audio, dtype="int8")
-    audio = np.trim_zeros(audio, 'fb')
+    audio = np.trim_zeros(audio, "fb")
     cap = cv2.VideoCapture(filepath)
     frameNumber = 1
     cap.set(1, frameNumber)
@@ -105,8 +105,8 @@ def trng_algorithm(filepath):
 
     result_tmp = []
     for i in range(0, len(bit_result), 8):
-        tmp = ''.join(bit_result[i:i + 8])
+        tmp = "".join(bit_result[i:i + 8])
         result_tmp.append(str(int(tmp, 2)))
 
-    result = ''.join(result_tmp)
-    print(result)
+    result = "".join(result_tmp)
+    return result.encode('utf-8')
