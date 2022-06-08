@@ -1,6 +1,5 @@
-from typing import Any
-
 from Crypto import Hash
+from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from tkinter import *
@@ -20,13 +19,13 @@ generate_keys_button = ""
 verify_button = ""
 hash_object: Hash
 signature: bytes
+key: RsaKey
 
 
 def open_file():
     global filepath
     filepath = filedialog.askopenfilename(title="Choose file")
     hash_text = str(hash_file(filepath).hexdigest())
-    save_hash_text(hash_text, filepath)
 
     # Update filepath label
     path_label["text"] = filepath
@@ -52,73 +51,92 @@ def hash_file(file):
     return hash_object
 
 
-def save_hash_text(hashcode, path):
-    with open("hashcode.txt", "w") as file:
-        file.write("This is file containing hashcode of file: " + path + ": \n")
-        file.write(hashcode)
-        file.write("\n\nSave this to verify if program is working correctly.\n")
-
-
 def generate_keys():
     # Check if file chosen
+    global key
     if filepath == "None" or filepath == "":
         status_label["text"] = "Error: no file selected."
     else:
         # Update labels
         status_label["text"] = "Generating RSA key pair..."
         status_value["text"] = ""
-        key = RSA.generate(2048, randomsource.execute())
+        try:
+            key = RSA.generate(2048, randomsource.execute())
+            # Generate private key
+            print("Generating private key...")
+            private_key = key.export_key()
+            file_out = open("private.pem", "wb")
+            file_out.write(private_key)
+            file_out.close()
+            print("Done.")
+            # Generate public key
+            print("Generating public key...")
+            public_key = key.public_key().export_key()
+            file_out = open("public.pem", "wb")
+            file_out.write(public_key)
+            file_out.close()
+            # Update labels
+            status_label["text"] = "Generated RSA key pair."
+            status_value["text"] = ""
+            print("Done.")
+            # Update buttons availability
+            sign_button["state"] = "normal"
 
-        # Generate private key
-        print("Generating private key...")
-        private_key = key.export_key()
-        file_out = open("private.pem", "wb")
-        file_out.write(private_key)
-        file_out.close()
-        print("Done.")
-        # Generate public key
-        print("Generating public key...")
-        public_key = key.public_key().export_key()
-        file_out = open("public.pem", "wb")
-        file_out.write(public_key)
-        file_out.close()
-        # Update labels
-        status_label["text"] = "Generated RSA key pair."
-        status_value["text"] = ""
-        print("Done.")
-        # Update buttons availability
-        sign_button["state"] = "normal"
+        except TypeError:
+            print("Key generation failed, sorry, shit happens. Try again.")
+            status_label["text"] = "Key generation failed, sorry, shit happens. Try again."
 
 
 def sign_file():
     # Check if file chosen
     if filepath == "None" or filepath == "":
+        print("Error: no file selected.")
         status_label["text"] = "Error: no file selected."
     else:
         global hash_object
         global signature
+        print("Signing file...")
         status_label["text"] = "Signing file..."
         private_key = RSA.importKey(open("private.pem").read())
         signer = pkcs1_15.new(private_key)
         signature = signer.sign(hash_object)
 
+        print("Signed.")
         status_label["text"] = "Signed."
         verify_button["state"] = "normal"
 
 
 def verify_file():
+    global filepath
+    filepath = filedialog.askopenfilename(title="Choose file")
     # Check if file chosen
     if filepath == "None" or filepath == "":
+        print("Error: no file selected.")
         status_label["text"] = "Error: no file selected."
     else:
-        global hash_object
         global signature
-        status_label["text"] = "Signing file..."
+        hash_object_to_verification = hash_file(filepath)
+        hash_text = str(hash_object_to_verification.hexdigest())
+
+        # Update filepath label
+        path_label["text"] = filepath
+
+        # Update status bar
+        status_label["text"] = "Hashcode of file chosen to verification:"
+        status_value["text"] = hash_text
+
+        print("Verifying file...")
+        status_label["text"] = "Verifying file..."
         public_key = RSA.importKey(open("public.pem").read())
         verifier = pkcs1_15.new(public_key)
-        verifier.verify(hash_object, signature)
+        try:
+            verifier.verify(hash_object_to_verification, signature)
+            print("Verified. All good my dude.")
+            status_label["text"] = "Verified. All good my dude."
 
-        status_label["text"] = "Verified."
+        except ValueError:
+            print("Signature is not valid.")
+            status_label["text"] = "Signature is not valid."
 
 
 def main():
@@ -143,7 +161,8 @@ def main():
                                   borderwidth=1, state="disabled")
     sign_button = Button(window, command=sign_file, text="Sign chosen file", width=30, bg="#bcfecb", borderwidth=1,
                          state="disabled")
-    verify_button = Button(window, command=verify_file, text="Verify a signature", width=30, bg="#ffdfba", borderwidth=1, state="disabled")
+    verify_button = Button(window, command=verify_file, text="Verify a signature", width=30, bg="#ffdfba",
+                           borderwidth=1, state="disabled")
     choose_file_button.grid(row=2, column=0, ipady=4)
     generate_keys_button.grid(row=2, column=1, ipady=4)
     sign_button.grid(row=3, column=0, ipady=4)
