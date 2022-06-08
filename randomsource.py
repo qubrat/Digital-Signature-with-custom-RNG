@@ -5,7 +5,7 @@ from time import sleep
 import streamlink
 import TRNG
 
-url = "https://www.youtube.com/watch?v=h3MuIUNCCzI"  # FRANCE 24 English – LIVE - 24/7 stream
+base_url = "https://www.youtube.com/watch?v=h3MuIUNCCzI"  # FRANCE 24 English – LIVE - 24/7 stream
 
 
 def get_stream(url):
@@ -34,7 +34,7 @@ def dl_stream(url, filename):
 
 def execute():
     print("Hello, I'm generating random bits...")
-    dl_stream(url, "live")
+    dl_stream(base_url, "live")
     print("Done.")
     sleep(3)
     remove("audio.wav")

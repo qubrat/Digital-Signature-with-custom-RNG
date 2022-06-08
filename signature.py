@@ -6,7 +6,6 @@ from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from tkinter import *
 from tkinter import filedialog
-import tkinter.font as font
 from Crypto.PublicKey import RSA
 import randomsource
 
