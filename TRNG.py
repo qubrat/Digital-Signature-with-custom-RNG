@@ -1,17 +1,17 @@
-import moviepy.editor as mp
-import cv2
-import wave
-import numpy as np
+from moviepy.editor import AudioFileClip
+from cv2 import VideoCapture
+from wave import open
+from numpy import frombuffer, trim_zeros, var
+
 
 def trng_algorithm(filepath):
-
-    video = mp.AudioFileClip(filepath)
+    video = AudioFileClip(filepath)
     video.write_audiofile(r"audio.wav")
-    raw = wave.open("audio.wav")
+    raw = open("audio.wav")
     audio = raw.readframes(-1)
-    audio = np.frombuffer(audio, dtype="int8")
-    audio = np.trim_zeros(audio, "fb")
-    cap = cv2.VideoCapture(filepath)
+    audio = frombuffer(audio, dtype="int8")
+    audio = trim_zeros(audio, "fb")
+    cap = VideoCapture(filepath)
     frameNumber = 1
     cap.set(1, frameNumber)
     res, frame = cap.read()  # wczytujemy dane z klatki
@@ -20,15 +20,15 @@ def trng_algorithm(filepath):
     x = int(width / 2)
     y = int(height / 2)
 
-    color_i_1 = (frame[y - 1, x - 1, 2] << 16) + (frame[y - 1, x - 1, 1] << 8)  + (frame[y - 1, x - 1, 1])
-    color_i_2 = (frame[y - 1, x, 2]     << 16) + (frame[y - 1, x, 1]     << 8)  + (frame[y - 1, x, 1])
-    color_i_3 = (frame[y - 1, x + 1, 2] << 16) + (frame[y - 1, x + 1, 1] << 8)  + (frame[y - 1, x + 1, 1])
-    color_i_4 = (frame[y, x - 1, 2] << 16)     + (frame[y, x - 1, 1] << 8)      + (frame[y, x - 1, 1])
-    color_i_5 = (frame[y, x, 2]     << 16)     + (frame[y, x, 1]     << 8)      + (frame[y, x, 1])
-    color_i_6 = (frame[y, x + 1, 2] << 16)     + (frame[y, x + 1, 1] << 8)      + (frame[y, x + 1, 1])
-    color_i_7 = (frame[y + 1, x - 1, 2] << 16) + (frame[y + 1, x - 1, 1] << 8)  + (frame[y + 1, x - 1, 1])
-    color_i_8 = (frame[y + 1, x, 2]     << 16) + (frame[y + 1, x, 1]     << 8)  + (frame[y + 1, x, 1])
-    color_i_9 = (frame[y + 1, x + 1, 2] << 16) + (frame[y + 1, x + 1, 1] << 8)  + (frame[y + 1, x + 1, 1])
+    color_i_1 = (frame[y - 1, x - 1, 2] << 16) + (frame[y - 1, x - 1, 1] << 8) + (frame[y - 1, x - 1, 1])
+    color_i_2 = (frame[y - 1, x, 2] << 16) + (frame[y - 1, x, 1] << 8) + (frame[y - 1, x, 1])
+    color_i_3 = (frame[y - 1, x + 1, 2] << 16) + (frame[y - 1, x + 1, 1] << 8) + (frame[y - 1, x + 1, 1])
+    color_i_4 = (frame[y, x - 1, 2] << 16) + (frame[y, x - 1, 1] << 8) + (frame[y, x - 1, 1])
+    color_i_5 = (frame[y, x, 2] << 16) + (frame[y, x, 1] << 8) + (frame[y, x, 1])
+    color_i_6 = (frame[y, x + 1, 2] << 16) + (frame[y, x + 1, 1] << 8) + (frame[y, x + 1, 1])
+    color_i_7 = (frame[y + 1, x - 1, 2] << 16) + (frame[y + 1, x - 1, 1] << 8) + (frame[y + 1, x - 1, 1])
+    color_i_8 = (frame[y + 1, x, 2] << 16) + (frame[y + 1, x, 1] << 8) + (frame[y + 1, x, 1])
+    color_i_9 = (frame[y + 1, x + 1, 2] << 16) + (frame[y + 1, x + 1, 1] << 8) + (frame[y + 1, x + 1, 1])
 
     color_i = int(
         (color_i_1 + color_i_2 + color_i_3 + color_i_4 + color_i_5 + color_i_6 + color_i_7 + color_i_8 + color_i_9) / 9)
@@ -39,7 +39,7 @@ def trng_algorithm(filepath):
     # print(x,y)
 
     bit_result = []
-    vt = int(np.var(frame[:, :, :]) / 2)
+    vt = int(var(frame[:, :, :]) / 2)
     threshold = 100
     watchdog = 0
     K = 2000
@@ -68,7 +68,7 @@ def trng_algorithm(filepath):
                 frameNumber += 1
                 cap.set(1, frameNumber)
                 res, frame = cap.read()
-                vt = int(np.var(frame[:, :, :]) / 2)
+                vt = int(var(frame[:, :, :]) / 2)
                 watchdog = 0
                 skipCount += 1
                 print("frame skipped")

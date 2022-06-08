@@ -1,9 +1,9 @@
-import os
-import urllib
-import m3u8
+from os import remove
+from urllib import request
+from m3u8 import load
+from time import sleep
 import streamlink
 import TRNG
-import time
 
 url = "https://www.youtube.com/watch?v=h3MuIUNCCzI"  # FRANCE 24 English – LIVE - 24/7 stream
 
@@ -14,7 +14,7 @@ def get_stream(url):
     streams = streamlink.streams(url)
     stream_url = streams["best"]
 
-    m3u8_obj = m3u8.load(stream_url.args["url"])
+    m3u8_obj = load(stream_url.args["url"])
     return m3u8_obj.segments[0]
 
 
@@ -26,7 +26,7 @@ def dl_stream(url, filename):
 
     print(cur_time_stamp)
     file = open(filename + "_" + "chunk" + ".mp4", "ab+")
-    with urllib.request.urlopen(stream_segment.uri) as response:
+    with request.urlopen(stream_segment.uri) as response:
         html = response.read()
         file.write(html)
     TRNG.trng_algorithm(file.name)
@@ -36,6 +36,6 @@ def execute():
     print("Hello, I'm generating random bits...")
     dl_stream(url, "live")
     print("Done.")
-    time.sleep(3)
-    os.remove("audio.wav")
-    os.remove("live_chunk.mp4")
+    sleep(3)
+    remove("audio.wav")
+    remove("live_chunk.mp4")

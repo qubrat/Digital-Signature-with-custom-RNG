@@ -1,16 +1,19 @@
+# pip install pycryptodome imageio streamlink tk m3u8 urllib3 wave numpy opencv-python moviepy
+
 from Crypto import Hash
 from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from tkinter import *
 from tkinter import filedialog
+import tkinter.font as font
 from Crypto.PublicKey import RSA
 import randomsource
 
 window = Tk()
-window.title("File encryption")
+window.title("Digital signature")
 
-filepath = "None"
+filepath = ""
 path_label = ""
 status_label = ""
 status_value = ""
@@ -25,17 +28,25 @@ key: RsaKey
 def open_file():
     global filepath
     filepath = filedialog.askopenfilename(title="Choose file")
-    hash_text = str(hash_file(filepath).hexdigest())
 
-    # Update filepath label
-    path_label["text"] = filepath
+    try:
+        hash_text = hash_file(filepath).hexdigest()
+        path_label["text"] = filepath
 
-    # Update status bar
-    status_label["text"] = "Hashcode of chosen file:"
-    status_value["text"] = hash_text
+        # Update status bar
+        status_label["fg"] = "black"
+        status_label["text"] = "SHA-256 hash of chosen file:"
+        status_value["text"] = hash_text
 
-    # Update buttons availability
-    generate_keys_button["state"] = "normal"
+        # Update buttons availability
+        generate_keys_button["state"] = "normal"
+
+    except FileNotFoundError:
+        print("Error: no file selected.")
+        status_label["text"] = "Error: no file selected."
+        status_label["fg"] = "#bc1c1c"
+        status_value["text"] = ""
+        path_label["text"] = "Please, select a file."
 
 
 def hash_file(file):
@@ -56,11 +67,14 @@ def generate_keys():
     global key
     if filepath == "None" or filepath == "":
         status_label["text"] = "Error: no file selected."
+        status_label["fg"] = "#bc1c1c"
     else:
         # Update labels
+        status_label["fg"] = "black"
         status_label["text"] = "Generating RSA key pair..."
         status_value["text"] = ""
         try:
+            status_label["fg"] = "black"
             key = RSA.generate(2048, randomsource.execute())
             # Generate private key
             print("Generating private key...")
@@ -79,6 +93,7 @@ def generate_keys():
             status_label["text"] = "Generated RSA key pair."
             status_value["text"] = ""
             print("Done.")
+            print("You can sign a file now.")
             # Update buttons availability
             sign_button["state"] = "normal"
 
@@ -92,9 +107,11 @@ def sign_file():
     if filepath == "None" or filepath == "":
         print("Error: no file selected.")
         status_label["text"] = "Error: no file selected."
+        status_label["fg"] = "#bc1c1c"
     else:
         global hash_object
         global signature
+        status_label["fg"] = "black"
         print("Signing file...")
         status_label["text"] = "Signing file..."
         private_key = RSA.importKey(open("private.pem").read())
@@ -113,30 +130,32 @@ def verify_file():
     if filepath == "None" or filepath == "":
         print("Error: no file selected.")
         status_label["text"] = "Error: no file selected."
+        status_label["fg"] = "#bc1c1c"
     else:
-        global signature
+        status_label["fg"] = "black"
         hash_object_to_verification = hash_file(filepath)
-        hash_text = str(hash_object_to_verification.hexdigest())
+        hash_text = hash_object_to_verification.hexdigest()
 
         # Update filepath label
         path_label["text"] = filepath
-
         # Update status bar
-        status_label["text"] = "Hashcode of file chosen to verification:"
+        status_label["text"] = "SHA-256 hash of file chosen to verification:"
         status_value["text"] = hash_text
-
         print("Verifying file...")
         status_label["text"] = "Verifying file..."
+        # Get public key stored previously and initiate verifier using this key
         public_key = RSA.importKey(open("public.pem").read())
         verifier = pkcs1_15.new(public_key)
         try:
             verifier.verify(hash_object_to_verification, signature)
             print("Verified. All good my dude.")
             status_label["text"] = "Verified. All good my dude."
+            status_label["fg"] = "#006300"
 
         except ValueError:
             print("Signature is not valid.")
             status_label["text"] = "Signature is not valid."
+            status_label["fg"] = "#bc1c1c"
 
 
 def main():
