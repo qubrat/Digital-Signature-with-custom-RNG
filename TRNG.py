@@ -55,7 +55,7 @@ def trng_algorithm(filepath):
     B2 = 0
     skipCount = 0
 
-    while len(bit_result) < 2048:
+    while len(bit_result) < 1024:
         R = frame[y, x, 2]
         G = frame[y, x, 1]
         B = frame[y, x, 0]
@@ -68,7 +68,11 @@ def trng_algorithm(filepath):
                 frameNumber += 1
                 cap.set(1, frameNumber)
                 res, frame = cap.read()
-                vt = int(var(frame[:, :, :]) / 2)
+                try:
+                    vt = int(var(frame[:, :, :]) / 2)
+                except TypeError:
+                    print("Empty frame occurred, skipping.")
+                    continue
                 watchdog = 0
                 skipCount += 1
                 print("frame skipped")

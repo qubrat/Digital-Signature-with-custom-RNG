@@ -5,37 +5,44 @@ from time import sleep
 import streamlink
 import TRNG
 
-base_url = "https://www.youtube.com/watch?v=h3MuIUNCCzI"  # FRANCE 24 English – LIVE - 24/7 stream
 
+class Source:
+    def __init__(self):
+        self.url = "https://www.youtube.com/watch?v=h3MuIUNCCzI"
+        self.filename = "live"
 
-def get_stream(url):
-    # Get upload chunk url
+    def get_stream(self):
+        # Get upload chunk url
 
-    streams = streamlink.streams(url)
-    stream_url = streams["best"]
+        streams = streamlink.streams(self.url)
+        stream_url = streams["best"]
 
-    m3u8_obj = load(stream_url.args["url"])
-    return m3u8_obj.segments[0]
+        m3u8_obj = load(stream_url.args["url"])
+        return m3u8_obj.segments[0]
 
+    def dl_stream(self, filename):
+        # Download each chunk
 
-def dl_stream(url, filename):
-    # Download each chunk
+        stream_segment = self.get_stream()
+        file = open(filename + "_" + "chunk" + ".mp4", "ab+")
+        with request.urlopen(stream_segment.uri) as response:
+            html = response.read()
+            file.write(html)
+        return file.name
 
-    stream_segment = get_stream(url)
-    cur_time_stamp = stream_segment.program_date_time.strftime("%Y%m%d-%H%M%S")
-
-    print(cur_time_stamp)
-    file = open(filename + "_" + "chunk" + ".mp4", "ab+")
-    with request.urlopen(stream_segment.uri) as response:
-        html = response.read()
-        file.write(html)
-    TRNG.trng_algorithm(file.name)
-
-
-def execute():
-    print("Hello, I'm generating random bits...")
-    dl_stream(base_url, "live")
-    print("Done.")
-    sleep(3)
-    remove("audio.wav")
-    remove("live_chunk.mp4")
+    def execute(self, byte_count):
+        random_bytes = b''
+        print("Hello, I'm generating random bits...")
+        while len(random_bytes) < byte_count:
+            filepath = self.dl_stream(self.filename)
+            random_bytes += TRNG.trng_algorithm(filepath)
+            if len(random_bytes) >= byte_count:
+                print("Done.")
+                sleep(0.5)
+                remove("audio.wav")
+                remove("live_chunk.mp4")
+                return random_bytes
+            # print(random_bytes)
+            sleep(0.5)
+            remove("audio.wav")
+            remove("live_chunk.mp4")
