@@ -16,6 +16,9 @@ To verify file, use `Verify a signature` button. Window will open asking you to 
 SHA-256 hash of given file is found and verification is performed using public key stored in `public.pem`.  
 
 # Basic setup instructions
+Note: It is highly recommended to run program in virtual environment to ensure proper functioning. But you can also follow
+steps below.
+
 Using terminal:
 
 1. Install required packages using `pip3`:
@@ -67,3 +70,7 @@ deactivate
 
 More about virtual environments can be found [here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/).
 
+# Sample images:
+![image1](https://github.com/qubrat/DS_verifier_Custom_RNG/blob/d28c2e5f461e2f464e4746a489f9b6ad207fbb41/images/signature.png)
+
+![image2](https://github.com/qubrat/DS_verifier_Custom_RNG/blob/d28c2e5f461e2f464e4746a489f9b6ad207fbb41/images/signature1.png)
