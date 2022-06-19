@@ -1,13 +1,14 @@
 # pip install pycryptodome imageio streamlink tk m3u8 urllib3 wave numpy opencv-python moviepy
 
-from Crypto import Hash
-from Crypto import Random
-from Crypto.PublicKey.RSA import RsaKey
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
 from tkinter import *
 from tkinter import filedialog
+
+from Crypto import Hash
+from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
+from Crypto.PublicKey.RSA import RsaKey
+from Crypto.Signature import pkcs1_15
+
 import randomsource
 
 window = Tk()
@@ -177,17 +178,22 @@ def main():
     path_label.grid(row=1, columnspan=2, ipady=5)
 
     # Buttons
-    choose_file_button = Button(window, command=open_file, text="Choose a file", width=30, bg="#bee3fe", borderwidth=1)
-    generate_keys_button = Button(window, command=generate_keys, text="Generate RSA keys", width=30, bg="#bee3fe",
-                                  borderwidth=1, state="disabled")
-    sign_button = Button(window, command=sign_file, text="Sign chosen file", width=30, bg="#bcfecb", borderwidth=1,
+    sign_frame = LabelFrame(window, text="Signing a file", padx=5, pady=5)
+    choose_file_button = Button(sign_frame, command=open_file, text="Select a file", width=30, bg="#bee3fe", borderwidth=1)
+    sign_button = Button(sign_frame, command=sign_file, text="Sign chosen file", width=30, bg="#bcfecb", borderwidth=1,
                          state="disabled")
-    verify_button = Button(window, command=verify_file, text="Verify a signature", width=30, bg="#ffdfba",
+    choose_file_button.grid(row=0, column=0, ipady=5)
+    sign_button.grid(row=0, column=1, ipady=5)
+
+    verify_frame = LabelFrame(window, text="Verifying signature", padx=5, pady=5)
+    choose_signature_button = Button(verify_frame, command=open_file, text="Select a signature", width=30, bg="#bee3fe", borderwidth=1)
+    verify_button = Button(verify_frame, command=verify_file, text="Verify a signature", width=30, bg="#ffdfba",
                            borderwidth=1, state="disabled")
-    choose_file_button.grid(row=2, column=0, ipady=4)
-    generate_keys_button.grid(row=2, column=1, ipady=4)
-    sign_button.grid(row=3, column=0, ipady=4)
-    verify_button.grid(row=3, column=1, ipady=4)
+    choose_signature_button.grid(row=0, column=0, ipady=5)
+    verify_button.grid(row=0, column=1, ipady=5)
+
+    sign_frame.grid(row=2, pady=10, padx=20)
+    verify_frame.grid(row=3, pady=10, padx=20)
 
     # Status bar
     status_label = Label(window, text="Perform an action my dude,", anchor=E, bg="#cfcfcf")
