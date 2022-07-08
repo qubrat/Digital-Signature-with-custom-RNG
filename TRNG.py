@@ -4,7 +4,7 @@ from wave import open
 from numpy import frombuffer, trim_zeros, var
 
 
-def trng_algorithm(filepath):
+def trng_algorithm(filepath, byte_count):
     video = AudioFileClip(filepath)
     video.write_audiofile(r"audio.wav")
     raw = open("audio.wav")
@@ -55,7 +55,7 @@ def trng_algorithm(filepath):
     B2 = 0
     skipCount = 0
 
-    while len(bit_result) < 1024:
+    while len(bit_result) < byte_count*8:
         R = frame[y, x, 2]
         G = frame[y, x, 1]
         B = frame[y, x, 0]

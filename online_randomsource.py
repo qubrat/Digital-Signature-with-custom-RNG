@@ -35,8 +35,9 @@ class Source:
         print("Hello, I'm generating random bits...")
         while len(random_bytes) < byte_count:
             filepath = self.dl_stream(self.filename)
-            random_bytes += TRNG.trng_algorithm(filepath)
-            if len(random_bytes) >= byte_count:
+            random_bytes += TRNG.trng_algorithm(filepath, byte_count)
+            length = len(random_bytes)
+            if length >= byte_count:
                 print("Done.")
                 sleep(0.5)
                 remove("audio.wav")
