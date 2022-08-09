@@ -22,6 +22,7 @@ generate_keys_button = ""
 verify_button = ""
 hash_object: Hash
 signature: bytes
+sign: bytes
 
 
 def printGreen(text): print("\033[92m{}\033[00m".format(text))
@@ -55,6 +56,13 @@ def open_file():
         sign_button["state"] = "normal"
 
     except FileNotFoundError:
+        printRed("Error: no file selected.")
+        status_label["text"] = "Error: no file selected."
+        status_label["fg"] = "#bc1c1c"
+        status_value["text"] = ""
+        path_label["text"] = "Please, select a file."
+
+    except TypeError:
         printRed("Error: no file selected.")
         status_label["text"] = "Error: no file selected."
         status_label["fg"] = "#bc1c1c"
@@ -157,25 +165,49 @@ def sign_file(if_online):
             signer = pkcs1_15.new(private_key)
             signature = signer.sign(hash_object)
 
+            file_out = open("signature.pem", "wb")
+            file_out.write(signature)
+            file_out.close()
+
             printGreen("Signed.")
             status_label["text"] = "Signed."
-            verify_button["state"] = "normal"
 
         except InterruptedError:
             printRed("No video file selected!")
             printYellow("    Please select a file when file selection window shows up.")
 
 
+def select_signature_file():
+    global filepath
+    filepath = filedialog.askopenfilename(title="Choose signature file.")
+    if filepath == "None" or filepath == "":
+        printRed("Error: no file selected.")
+        status_label["text"] = "Error: no file selected."
+        status_label["fg"] = "#bc1c1c"
+    else:
+        path_label["text"] = filepath
+        status_label["fg"] = "black"
+        status_label["text"] = "Selected signature file:"
+        status_value["text"] = filepath
+        verify_button["state"] = "normal"
+        printYellow("Selected signature file:")
+        print(filepath)
+
+        global sign
+        signature_f = open(filepath, "rb")
+        sign = signature_f.read()
+        signature_f.close()
+
+
 def verify_file():
     global filepath
-    filepath = filedialog.askopenfilename(title="Choose file")
+    filepath = filedialog.askopenfilename(title="Choose file for verification")
     # Check if file chosen
     if filepath == "None" or filepath == "":
         printRed("Error: no file selected.")
         status_label["text"] = "Error: no file selected."
         status_label["fg"] = "#bc1c1c"
     else:
-        status_label["fg"] = "black"
         hash_object_to_verification = hash_file(filepath)
         hash_text = hash_object_to_verification.hexdigest()
 
@@ -190,15 +222,18 @@ def verify_file():
         public_key = RSA.importKey(open("public.pem").read())
         verifier = pkcs1_15.new(public_key)
         try:
-            verifier.verify(hash_object_to_verification, signature)
+            global sign
+            verifier.verify(hash_object_to_verification, sign)
             printGreen("Verified. All good my dude.")
             status_label["text"] = "Verified. All good my dude."
             status_label["fg"] = "#006300"
+            status_value["text"] = ""
 
         except ValueError:
             printRed("Signature is not valid.")
             status_label["text"] = "Signature is not valid."
             status_label["fg"] = "#bc1c1c"
+            status_value["text"] = ""
 
 
 def main():
@@ -237,7 +272,7 @@ def main():
 
     # Verify frame
     verify_frame = LabelFrame(window, text="Verifying signature", padx=5, pady=5)
-    choose_signature_button = Button(verify_frame, command=open_file, text="Select a signature file", width=30,
+    choose_signature_button = Button(verify_frame, command=select_signature_file, text="Select a signature file", width=30,
                                      bg="#bee3fe", borderwidth=1)
     verify_button = Button(verify_frame, command=verify_file, text="Verify a signature", width=30, bg="#ffdfba",
                            borderwidth=1, state="disabled")
