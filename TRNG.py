@@ -1,19 +1,29 @@
 from moviepy.editor import AudioFileClip
 from cv2 import VideoCapture
-from wave import open
+import wave
 from numpy import frombuffer, trim_zeros, var
+import sys
+from os import remove
+
+# data amount given in kB
+data_amount = 50
+filepath = 'video.mp4'
 
 
-def trng_algorithm(filepath, byte_count):
+def kB_to_bits(kB):
+    return kB * 1024 * 8
+
+
+def trng_algorithm(filepath):
     video = AudioFileClip(filepath)
     video.write_audiofile(r"audio.wav")
-    raw = open("audio.wav")
+    raw = wave.open("audio.wav")
     audio = raw.readframes(-1)
     audio = frombuffer(audio, dtype="int8")
     audio = trim_zeros(audio, "fb")
     cap = VideoCapture(filepath)
-    frameNumber = 1
-    cap.set(1, frameNumber)
+    frame_number = 1
+    cap.set(1, frame_number)
     res, frame = cap.read()  # wczytujemy dane z klatki
     height, width, channels = frame.shape  # pobieramy dane z klatki
 
@@ -47,70 +57,76 @@ def trng_algorithm(filepath, byte_count):
     j = 0
     runcnt = 0
     control = 1
-    R1 = 0
-    G1 = 0
-    B1 = 0
-    R2 = 0
-    G2 = 0
-    B2 = 0
-    skipCount = 0
+    r_1 = 0
+    g_1 = 0
+    b_1 = 0
+    r_2 = 0
+    g_2 = 0
+    b_2 = 0
+    skip_count = 0
 
-    while len(bit_result) < byte_count*8:
-        R = frame[y, x, 2]
-        G = frame[y, x, 1]
-        B = frame[y, x, 0]
+    while len(bit_result) < kB_to_bits(data_amount):
+        r = frame[y, x, 2]
+        g = frame[y, x, 1]
+        b = frame[y, x, 0]
 
-        if (((R - R1) ** 2) + ((G - G1) ** 2) + ((B - B1) ** 2)) < vt:
-            x = (x + (R ^ G) + 1) % width
-            y = (y + (G ^ B) + 1) % height
+        if (((r - r_1) ** 2) + ((g - g_1) ** 2) + ((b - b_1) ** 2)) < vt:
+            x = (x + (r ^ g) + 1) % width
+            y = (y + (g ^ b) + 1) % height
             watchdog += 1
             if watchdog > threshold:
-                frameNumber += 1
-                cap.set(1, frameNumber)
+                frame_number += 1
+                cap.set(1, frame_number)
                 res, frame = cap.read()
                 try:
                     vt = int(var(frame[:, :, :]) / 2)
                 except TypeError:
-                    print("Empty frame occurred, skipping.")
+                    print("Empty frame, skipping to the next one.")
                     continue
                 watchdog = 0
-                skipCount += 1
-                print("frame skipped")
+                skip_count += 1
+                sys.stdout.write("\rSkipped %i frames" % skip_count)
+                sys.stdout.flush()
                 continue
             else:
                 continue
         else:
             if control < 1000:
                 # print("mixing bits")
-                SN1 = audio[int(j + 10 + ((R * i) + (G << 2) + B + runcnt) % (K / 2))]
-                SN2 = audio[int(j + 15 + ((R * i) + (G << 3) + B + runcnt) % (K / 2))]
-                SN3 = audio[int(j + 20 + ((R * i) + (G << 4) + B + runcnt) % (K / 2))]
-                SN4 = audio[int(j + 5 + ((R * i) + (G << 1) + B + runcnt) % (K / 2))]
-                SN5 = audio[int(j + 25 + ((R * i) + (G << 5) + B + runcnt) % (K / 2))]
+                sn_1 = audio[int(j + 10 + ((r * i) + (g << 2) + b + runcnt) % (K / 2))]
+                sn_2 = audio[int(j + 15 + ((r * i) + (g << 3) + b + runcnt) % (K / 2))]
+                sn_3 = audio[int(j + 20 + ((r * i) + (g << 4) + b + runcnt) % (K / 2))]
+                sn_4 = audio[int(j + 5 + ((r * i) + (g << 1) + b + runcnt) % (K / 2))]
+                sn_5 = audio[int(j + 25 + ((r * i) + (g << 5) + b + runcnt) % (K / 2))]
 
-                bit_i = 1 & (R ^ G ^ B ^ R1 ^ B1 ^ G1 ^ R2 ^ G2 ^ B2 ^ SN1 ^ SN2 ^ SN3 ^ SN4 ^ SN5)
+                bit_i = 1 & (r ^ g ^ b ^ r_1 ^ b_1 ^ g_1 ^ r_2 ^ g_2 ^ b_2 ^ sn_1 ^ sn_2 ^ sn_3 ^ sn_4 ^ sn_5)
                 bit_result.append(str(bit_i))
-                R1 = R
-                G1 = G
-                B1 = B
+                r_1 = r
+                g_1 = g
+                b_1 = b
                 i += 1
                 control += 1
             else:
                 control = 0
                 runcnt += 1
             if i >= 8:
-                R2 = R
-                G2 = G
-                B2 = B
+                r_2 = r
+                g_2 = g
+                b_2 = b
                 i = 0
-            x = (((R ^ x) << 4) ^ (G ^ y)) % width
-            y = (((G ^ x) << 4) ^ (B ^ y)) % height
+            x = (((r ^ x) << 4) ^ (g ^ y)) % width
+            y = (((g ^ x) << 4) ^ (b ^ y)) % height
             j += K / 1000
 
-    result_tmp = []
+    datafile = open('datafile.txt', 'w')
     for i in range(0, len(bit_result), 8):
         tmp = "".join(bit_result[i:i + 8])
-        result_tmp.append(str(int(tmp, 2)))
+        datafile.write("%s\n" % str(int(tmp, 2)))
+    datafile.close()
 
-    result = "".join(result_tmp)
-    return result.encode('utf-8')
+    remove('audio.wav')
+    # remove(filepath)
+
+
+if __name__ == "__main__":
+    trng_algorithm(filepath)

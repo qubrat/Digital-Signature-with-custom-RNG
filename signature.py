@@ -96,7 +96,6 @@ def generate_keys(online_video):
         try:
             status_label["fg"] = "black"
             key: RsaKey
-            all_good = True
             if online_video.get() == 1:
                 random_data = online_randomsource.Source()
                 key = RSA.generate(2048)
@@ -108,13 +107,11 @@ def generate_keys(online_video):
                     key = RSA.generate(2048)
                     generate(key)
                 except OSError:
-                    key = None
                     printRed("Error: no video file selected.")
                     printYellow("    Please, select a video file to generate keys!")
                     status_label["text"] = "Error: no video file selected."
                     status_label["fg"] = "#bc1c1c"
                     status_value["text"] = "Please, select a video file to generate keys!"
-                    raise InterruptedError
 
         except AttributeError:
             printYellow("Key generation failed, no video file selected.")
