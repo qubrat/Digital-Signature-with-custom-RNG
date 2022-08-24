@@ -2,13 +2,12 @@
 
 from tkinter import *
 from tkinter import filedialog
-from Crypto import Hash
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
-from Crypto.PublicKey.RSA import RsaKey
 from Crypto.Signature import pkcs1_15
 import TRNG
-import online_randomsource
+import data_creator
+import video_processor
 
 window = Tk()
 window.title("Digital signature")
@@ -20,7 +19,7 @@ status_value = ""
 sign_button = ""
 generate_keys_button = ""
 verify_button = ""
-hash_object: Hash
+hash_object: SHA256.SHA256Hash
 signature: bytes
 sign: bytes
 
@@ -36,6 +35,8 @@ def printRed(text): print("\033[91m{}\033[00m".format(text))
 
 def printCyan(text): print("\033[95m{}\033[00m".format(text))
 
+
+# ------------------OPENING FILE------------------
 
 def open_file():
     global filepath
@@ -83,6 +84,39 @@ def hash_file(file):
     return hash_object
 
 
+# ------------------SIGNING FILE------------------
+
+def sign_file(if_online):
+    # Check if file chosen
+    if filepath == "None" or filepath == "":
+        printRed("Error: no file selected.")
+        status_label["text"] = "Error: no file selected."
+        status_label["fg"] = "#bc1c1c"
+    else:
+        global hash_object
+        global signature
+
+        try:
+            printCyan("Signing file...")
+            status_label["text"] = "Signing file..."
+            generate_keys(if_online)
+            status_label["fg"] = "black"
+            private_key = RSA.importKey(open("private.pem").read())
+            signer = pkcs1_15.new(private_key)
+            signature = signer.sign(hash_object)
+
+            file_out = open("signature.pem", "wb")
+            file_out.write(signature)
+            file_out.close()
+
+            printGreen("Signed.")
+            status_label["text"] = "Signed."
+
+        except InterruptedError:
+            printRed("No video file selected!")
+            printYellow("    Please select a file when file selection window shows up.")
+
+
 def generate_keys(online_video):
     # Check if file chosen
     if filepath == "None" or filepath == "":
@@ -95,16 +129,19 @@ def generate_keys(online_video):
         status_value["text"] = ""
         try:
             status_label["fg"] = "black"
-            key: RsaKey
+            key: RSA.RsaKey
             if online_video.get() == 1:
-                random_data = online_randomsource.Source()
-                key = RSA.generate(2048)
+                file = video_processor.get_video()
+                data = TRNG.trng_algorithm(file, 1)
+                random_bytes = data_creator.DataCreator(data)
+                key = RSA.generate(2048, random_bytes.get_random_element)
                 generate(key)
             else:
                 try:
                     file = filedialog.askopenfilename(title="Choose video file")
-                    TRNG.trng_algorithm(file, 128)
-                    key = RSA.generate(2048)
+                    data = TRNG.trng_algorithm(file)
+                    random_bytes = data_creator.DataCreator(data)
+                    key = RSA.generate(2048, random_bytes.execute)
                     generate(key)
                 except OSError:
                     printRed("Error: no video file selected.")
@@ -143,36 +180,7 @@ def generate(key):
     print("Generated RSA key pair.")
 
 
-def sign_file(if_online):
-    # Check if file chosen
-    if filepath == "None" or filepath == "":
-        printRed("Error: no file selected.")
-        status_label["text"] = "Error: no file selected."
-        status_label["fg"] = "#bc1c1c"
-    else:
-        global hash_object
-        global signature
-
-        try:
-            generate_keys(if_online)
-            status_label["fg"] = "black"
-            printCyan("Signing file...")
-            status_label["text"] = "Signing file..."
-            private_key = RSA.importKey(open("private.pem").read())
-            signer = pkcs1_15.new(private_key)
-            signature = signer.sign(hash_object)
-
-            file_out = open("signature.pem", "wb")
-            file_out.write(signature)
-            file_out.close()
-
-            printGreen("Signed.")
-            status_label["text"] = "Signed."
-
-        except InterruptedError:
-            printRed("No video file selected!")
-            printYellow("    Please select a file when file selection window shows up.")
-
+# ------------------VERIFYING SIGNATURE------------------
 
 def select_signature_file():
     global filepath
@@ -233,6 +241,8 @@ def verify_file():
             status_value["text"] = ""
 
 
+# ------------------MAIN LOOP------------------
+
 def main():
     # Labels
     global filepath
@@ -269,7 +279,8 @@ def main():
 
     # Verify frame
     verify_frame = LabelFrame(window, text="Verifying signature", padx=5, pady=5)
-    choose_signature_button = Button(verify_frame, command=select_signature_file, text="Select a signature file", width=30,
+    choose_signature_button = Button(verify_frame, command=select_signature_file, text="Select a signature file",
+                                     width=30,
                                      bg="#bee3fe", borderwidth=1)
     verify_button = Button(verify_frame, command=verify_file, text="Verify a signature", width=30, bg="#ffdfba",
                            borderwidth=1, state="disabled")

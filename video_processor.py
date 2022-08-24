@@ -17,6 +17,7 @@ def get_stream(url):
 
 def dl_stream(url, filename, chunks):
     pre_time_stamp = 0
+    os.mkdir('source')
     for i in range(chunks + 1):
         stream_segment = get_stream(url)
         cur_time_stamp = \
@@ -42,15 +43,27 @@ def merge_files():
                 filepath = os.path.join(root, file)
                 video = VideoFileClip(filepath)
                 videos.append(video)
-                remove(filepath)
     final_clip = concatenate_videoclips(videos)
     final_clip.to_videofile("video.mp4", fps=30)
+
+    for root, dirs, files in os.walk("source"):
+        for file in files:
+            if os.path.splitext(file)[1] == '.mp4':
+                filepath = os.path.join(root, file)
+                remove(filepath)
+    os.rmdir('source')
 
 
 base_url = "https://www.youtube.com/watch?v=h3MuIUNCCzI"
 name = "video_chunk"
-iterations = 20
+iterations = 25
 
-if __name__ == "__main__":
+
+def get_video():
     dl_stream(base_url, name, iterations)
     merge_files()
+    return 'video.mp4'
+
+
+if __name__ == '__main__':
+    get_video()

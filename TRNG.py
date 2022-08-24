@@ -14,7 +14,8 @@ def kB_to_bits(kB):
     return kB * 1024 * 8
 
 
-def trng_algorithm(filepath):
+def trng_algorithm(filepath, online_flag=0):
+    print("Processing given video...")
     video = AudioFileClip(filepath)
     video.write_audiofile(r"audio.wav")
     raw = wave.open("audio.wav")
@@ -81,7 +82,7 @@ def trng_algorithm(filepath):
                 try:
                     vt = int(var(frame[:, :, :]) / 2)
                 except TypeError:
-                    print("Empty frame, skipping to the next one.")
+                    print("\nEmpty frame, skipping to the next one.")
                     continue
                 watchdog = 0
                 skip_count += 1
@@ -118,14 +119,15 @@ def trng_algorithm(filepath):
             y = (((g ^ x) << 4) ^ (b ^ y)) % height
             j += K / 1000
 
-    datafile = open('datafile.txt', 'w')
+    result = []
     for i in range(0, len(bit_result), 8):
         tmp = "".join(bit_result[i:i + 8])
-        datafile.write("%s\n" % str(int(tmp, 2)))
-    datafile.close()
+        result.append("%s\n" % str(int(tmp, 2)))
 
     remove('audio.wav')
-    # remove(filepath)
+    if online_flag == 1:
+        remove(filepath)
+    return result
 
 
 if __name__ == "__main__":
