@@ -1,7 +1,6 @@
-from moviepy.editor import AudioFileClip
+import moviepy.editor as mp
 from cv2 import VideoCapture
-import wave
-from numpy import frombuffer, trim_zeros, var
+from numpy import var
 import sys
 from os import remove
 
@@ -16,12 +15,9 @@ def kB_to_bits(kB):
 
 def trng_algorithm(filepath, online_flag=0):
     print("Processing given video...")
-    video = AudioFileClip(filepath)
-    video.write_audiofile(r"audio.wav")
-    raw = wave.open("audio.wav")
-    audio = raw.readframes(-1)
-    audio = frombuffer(audio, dtype="int8")
-    audio = trim_zeros(audio, "fb")
+    audio = mp.AudioFileClip(filepath)
+    audio = audio.to_soundarray(nbytes=2, buffersize=1000, fps=44100)
+    audio = (audio*10000).flatten().astype(int)
     cap = VideoCapture(filepath)
     frame_number = 1
     cap.set(1, frame_number)
@@ -118,13 +114,12 @@ def trng_algorithm(filepath, online_flag=0):
             x = (((r ^ x) << 4) ^ (g ^ y)) % width
             y = (((g ^ x) << 4) ^ (b ^ y)) % height
             j += K / 1000
-
+    print('\n')
     result = []
     for i in range(0, len(bit_result), 8):
         tmp = "".join(bit_result[i:i + 8])
         result.append("%s\n" % str(int(tmp, 2)))
 
-    remove('audio.wav')
     if online_flag == 1:
         remove(filepath)
     return result

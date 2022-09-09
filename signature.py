@@ -19,7 +19,6 @@ status_value = ""
 sign_button = ""
 generate_keys_button = ""
 verify_button = ""
-hash_object: SHA256.SHA256Hash
 signature: bytes
 sign: bytes
 
@@ -45,14 +44,7 @@ def open_file():
     print(filepath)
 
     try:
-        hash_text = hash_file(filepath).hexdigest()
         path_label["text"] = filepath
-
-        # Update status bar
-        status_label["fg"] = "black"
-        status_label["text"] = "SHA-256 hash of chosen file:"
-        status_value["text"] = hash_text
-
         # Update buttons availability
         sign_button["state"] = "normal"
 
@@ -72,16 +64,14 @@ def open_file():
 
 
 def hash_file(file):
-    global hash_object
-    hash_object = SHA256.new()
+    hash_aux = SHA256.new()
 
     with open(file, "rb") as file:
         chunk = 0
         while chunk != b"":
             chunk = file.read(1024)
-            hash_object.update(chunk)
-
-    return hash_object
+            hash_aux.update(chunk)
+    return hash_aux
 
 
 # ------------------SIGNING FILE------------------
@@ -93,21 +83,19 @@ def sign_file(if_online):
         status_label["text"] = "Error: no file selected."
         status_label["fg"] = "#bc1c1c"
     else:
-        global hash_object
         global signature
 
         try:
             printCyan("Signing file...")
             status_label["text"] = "Signing file..."
-            generate_keys(if_online)
             status_label["fg"] = "black"
-            private_key = RSA.importKey(open("private.pem").read())
+            private_key = generate_keys(if_online)
             signer = pkcs1_15.new(private_key)
-            signature = signer.sign(hash_object)
+            print(type(signer))
+            signature = signer.sign(hash_file(filepath))
 
-            file_out = open("signature.pem", "wb")
-            file_out.write(signature)
-            file_out.close()
+            with open("signature.pem", "wb") as file_out:
+                file_out.write(signature)
 
             printGreen("Signed.")
             status_label["text"] = "Signed."
@@ -134,15 +122,17 @@ def generate_keys(online_video):
                 file = video_processor.get_video()
                 data = TRNG.trng_algorithm(file, 1)
                 random_bytes = data_creator.DataCreator(data)
-                key = RSA.generate(2048, random_bytes.get_random_element)
-                generate(key)
+                key = RSA.generate(2048, random_bytes.execute)
+                print(key)
+                return generate(key)
             else:
                 try:
                     file = filedialog.askopenfilename(title="Choose video file")
                     data = TRNG.trng_algorithm(file)
                     random_bytes = data_creator.DataCreator(data)
                     key = RSA.generate(2048, random_bytes.execute)
-                    generate(key)
+                    print(key)
+                    return generate(key)
                 except OSError:
                     printRed("Error: no video file selected.")
                     printYellow("    Please, select a video file to generate keys!")
@@ -163,21 +153,20 @@ def generate(key):
     # Generate private key
     printCyan("Generating private key...")
     private_key = key.export_key()
-    file_out = open("private.pem", "wb")
-    file_out.write(private_key)
-    file_out.close()
+    with open("private.pem") as file_out:
+        file_out.write(private_key)
     printGreen("Done.")
     # Generate public key
     printCyan("Generating public key...")
     public_key = key.public_key().export_key()
-    file_out = open("public.pem", "wb")
-    file_out.write(public_key)
-    file_out.close()
+    with open("private.pem") as file_out:
+        file_out.write(public_key)
     printGreen("Done.")
     # Update labels
     status_label["text"] = "Generated RSA key pair."
     status_value["text"] = ""
     print("Generated RSA key pair.")
+    return private_key
 
 
 # ------------------VERIFYING SIGNATURE------------------
