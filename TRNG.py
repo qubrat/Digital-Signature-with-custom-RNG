@@ -116,12 +116,14 @@ def trng_algorithm(filepath, online_flag=0):
             j += K / 1000
     print('\n')
     result = []
+    print('Preparing data...')
     for i in range(0, len(bit_result), 8):
         tmp = "".join(bit_result[i:i + 8])
         result.append("%s\n" % str(int(tmp, 2)))
 
     if online_flag == 1:
         remove(filepath)
+    print('Done')
     return result
 
 

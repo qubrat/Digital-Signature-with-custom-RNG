@@ -1,5 +1,5 @@
 # pip install pycryptodome imageio streamlink tk m3u8 urllib3 wave numpy opencv-python moviepy
-
+from Crypto import Random
 from tkinter import *
 from tkinter import filedialog
 from Crypto.Hash import SHA256
@@ -89,9 +89,9 @@ def sign_file(if_online):
             printCyan("Signing file...")
             status_label["text"] = "Signing file..."
             status_label["fg"] = "black"
-            private_key = generate_keys(if_online)
-            signer = pkcs1_15.new(private_key)
-            print(type(signer))
+
+            key = generate_keys(if_online)
+            signer = pkcs1_15.new(key)
             signature = signer.sign(hash_file(filepath))
 
             with open("signature.pem", "wb") as file_out:
@@ -117,56 +117,62 @@ def generate_keys(online_video):
         status_value["text"] = ""
         try:
             status_label["fg"] = "black"
-            key: RSA.RsaKey
             if online_video.get() == 1:
                 file = video_processor.get_video()
+                random_generator = Random.new().read
                 data = TRNG.trng_algorithm(file, 1)
                 random_bytes = data_creator.DataCreator(data)
-                key = RSA.generate(2048, random_bytes.execute)
-                print(key)
-                return generate(key)
+                print('Random generator ', random_generator)
+                print('Random bytes ', random_bytes)
+                keys = RSA.generate(2048)
+                return keys
             else:
-                try:
-                    file = filedialog.askopenfilename(title="Choose video file")
-                    data = TRNG.trng_algorithm(file)
-                    random_bytes = data_creator.DataCreator(data)
-                    key = RSA.generate(2048, random_bytes.execute)
-                    print(key)
-                    return generate(key)
-                except OSError:
-                    printRed("Error: no video file selected.")
-                    printYellow("    Please, select a video file to generate keys!")
-                    status_label["text"] = "Error: no video file selected."
-                    status_label["fg"] = "#bc1c1c"
-                    status_value["text"] = "Please, select a video file to generate keys!"
+                file = filedialog.askopenfilename(title="Choose video file")
+                data = TRNG.trng_algorithm(file)
+                random_generator = Random.new().read
+                random_bytes = data_creator.DataCreator(data)
+                print('Random generator ', random_generator)
+                print('Random bytes ', random_bytes)
+                keys = RSA.generate(2048)
+                export_keys(keys)
+                return keys
+
+        except OSError:
+            printRed("Error: no video file selected.")
+            printYellow("    Please, select a video file to generate keys!")
+            status_label["text"] = "Error: no video file selected."
+            status_label["fg"] = "#bc1c1c"
+            status_value["text"] = "Please, select a video file to generate keys!"
 
         except AttributeError:
             printYellow("Key generation failed, no video file selected.")
             status_label["text"] = "Key generation failed, no video file selected."
+
         except TypeError:
             printYellow("Key generation failed.")
             printYellow("Try again.")
             status_label["text"] = "Key generation failed. Try again."
 
 
-def generate(key):
+def export_keys(key):
     # Generate private key
     printCyan("Generating private key...")
     private_key = key.export_key()
     with open("private.pem") as file_out:
         file_out.write(private_key)
     printGreen("Done.")
+
     # Generate public key
     printCyan("Generating public key...")
     public_key = key.public_key().export_key()
     with open("private.pem") as file_out:
         file_out.write(public_key)
     printGreen("Done.")
+
     # Update labels
     status_label["text"] = "Generated RSA key pair."
     status_value["text"] = ""
     print("Generated RSA key pair.")
-    return private_key
 
 
 # ------------------VERIFYING SIGNATURE------------------
