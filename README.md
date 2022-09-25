@@ -12,7 +12,7 @@ During the process of signing selected file, three files are created - `private.
 To verify file, first you have to use `Select a signature file` button. Window will open asking you to select a file with signature. This enables `Verify a signature` button. When clicked, program will ask you to select file you want to verify. Then SHA-256 hash of given file is found and verification is performed using public key stored in `public.pem`.  
 
 # Basic setup instructions
-Note: It is highly recommended to run program in virtual environment to ensure proper functioning. But you can also follow
+**Note:** It is highly recommended to run program in virtual environment to ensure proper functioning. But you can also follow
 steps below.
 
 Using terminal:
