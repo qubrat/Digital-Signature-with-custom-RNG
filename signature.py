@@ -1,5 +1,5 @@
 # pip install pycryptodome imageio streamlink tk m3u8 urllib3 wave numpy opencv-python moviepy
-from Crypto import Random
+
 from tkinter import *
 from tkinter import filedialog
 from Crypto.Hash import SHA256
@@ -8,6 +8,7 @@ from Crypto.Signature import pkcs1_15
 import TRNG
 import data_creator
 import video_processor
+from os import remove
 
 window = Tk()
 window.title("Digital signature")
@@ -64,14 +65,15 @@ def open_file():
 
 
 def hash_file(file):
-    hash_aux = SHA256.new()
+    hash_object = SHA256.new()
 
     with open(file, "rb") as file:
         chunk = 0
         while chunk != b"":
             chunk = file.read(1024)
-            hash_aux.update(chunk)
-    return hash_aux
+            hash_object.update(chunk)
+
+    return hash_object
 
 
 # ------------------SIGNING FILE------------------
@@ -90,15 +92,13 @@ def sign_file(if_online):
             status_label["text"] = "Signing file..."
             status_label["fg"] = "black"
 
-            key = generate_keys(if_online)
-            signer = pkcs1_15.new(key)
+            generate_keys(if_online)
+            private_key = RSA.importKey(open("private.pem").read())
+            signer = pkcs1_15.new(private_key)
             signature = signer.sign(hash_file(filepath))
 
             with open("signature.pem", "wb") as file_out:
                 file_out.write(signature)
-
-            printGreen("Signed.")
-            status_label["text"] = "Signed."
 
         except InterruptedError:
             printRed("No video file selected!")
@@ -119,23 +119,20 @@ def generate_keys(online_video):
             status_label["fg"] = "black"
             if online_video.get() == 1:
                 file = video_processor.get_video()
-                random_generator = Random.new().read
                 data = TRNG.trng_algorithm(file, 1)
                 random_bytes = data_creator.DataCreator(data)
-                print('Random generator ', random_generator)
-                print('Random bytes ', random_bytes)
-                keys = RSA.generate(2048)
-                return keys
+                key = RSA.generate(2048, random_bytes.execute)
+                export_keys(key)
+                printGreen("Signed.")
+                status_label["text"] = "Signed."
             else:
                 file = filedialog.askopenfilename(title="Choose video file")
                 data = TRNG.trng_algorithm(file)
-                random_generator = Random.new().read
                 random_bytes = data_creator.DataCreator(data)
-                print('Random generator ', random_generator)
-                print('Random bytes ', random_bytes)
-                keys = RSA.generate(2048)
-                export_keys(keys)
-                return keys
+                key = RSA.generate(2048, random_bytes.execute)
+                export_keys(key)
+                printGreen("File signed. Signature has been saved in 'signature.pem' file.")
+                status_label["text"] = "File signed. Signature has been saved in 'signature.pem' file."
 
         except OSError:
             printRed("Error: no video file selected.")
@@ -149,6 +146,8 @@ def generate_keys(online_video):
             status_label["text"] = "Key generation failed, no video file selected."
 
         except TypeError:
+            if online_video.get() == 1:
+                remove(filepath)
             printYellow("Key generation failed.")
             printYellow("Try again.")
             status_label["text"] = "Key generation failed. Try again."
@@ -156,16 +155,16 @@ def generate_keys(online_video):
 
 def export_keys(key):
     # Generate private key
-    printCyan("Generating private key...")
+    printCyan("Exporting private key...")
     private_key = key.export_key()
-    with open("private.pem") as file_out:
+    with open("private.pem", "wb") as file_out:
         file_out.write(private_key)
     printGreen("Done.")
 
     # Generate public key
-    printCyan("Generating public key...")
+    printCyan("Exporting public key...")
     public_key = key.public_key().export_key()
-    with open("private.pem") as file_out:
+    with open("public.pem", "wb") as file_out:
         file_out.write(public_key)
     printGreen("Done.")
 

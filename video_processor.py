@@ -56,7 +56,7 @@ def merge_files():
 
 base_url = "https://www.youtube.com/watch?v=h3MuIUNCCzI"
 name = "video_chunk"
-iterations = 25
+iterations = 15
 
 
 def get_video():

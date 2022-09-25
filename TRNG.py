@@ -82,7 +82,7 @@ def trng_algorithm(filepath, online_flag=0):
                     continue
                 watchdog = 0
                 skip_count += 1
-                sys.stdout.write("\rSkipped %i frames" % skip_count)
+                sys.stdout.write("  \rSkipped %i frames" % skip_count)
                 sys.stdout.flush()
                 continue
             else:
@@ -119,11 +119,11 @@ def trng_algorithm(filepath, online_flag=0):
     print('Preparing data...')
     for i in range(0, len(bit_result), 8):
         tmp = "".join(bit_result[i:i + 8])
-        result.append("%s\n" % str(int(tmp, 2)))
+        result.append(("%s" % str(int(tmp, 2))).encode('utf-8'))
 
     if online_flag == 1:
         remove(filepath)
-    print('Done')
+    print('Data preparation done.')
     return result
 
 
