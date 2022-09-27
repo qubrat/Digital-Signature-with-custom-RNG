@@ -126,7 +126,7 @@ def generate_keys(online_video):
                 printGreen("Signed.")
                 status_label["text"] = "Signed."
             else:
-                file = filedialog.askopenfilename(title="Choose video file")
+                file = filedialog.askopenfilename(title="Choose video file", filetypes=[("Video files", ".mp4")])
                 data = TRNG.trng_algorithm(file)
                 random_bytes = data_creator.DataCreator(data)
                 key = RSA.generate(2048, random_bytes.execute)
@@ -178,7 +178,7 @@ def export_keys(key):
 
 def select_signature_file():
     global filepath
-    filepath = filedialog.askopenfilename(title="Choose signature file.")
+    filepath = filedialog.askopenfilename(title="Choose signature file", filetypes=[("PEM files", ".pem")])
     if filepath == "None" or filepath == "":
         printRed("Error: no file selected.")
         status_label["text"] = "Error: no file selected."
